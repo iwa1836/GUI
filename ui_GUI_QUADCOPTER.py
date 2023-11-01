@@ -240,6 +240,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.SerialOutTB)
         self.SendButton = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
         self.SendButton.setObjectName("SendButton")
+        self.SendButton.clicked.connect(lambda: core_GUI_QUADCOPTER.SendCOM(self))
         self.SendButton.setEnabled(False)
         self.verticalLayout_3.addWidget(self.SendButton)
         self.COMStatus = QtWidgets.QLabel(parent=self.verticalLayoutWidget)
@@ -277,6 +278,8 @@ class Ui_MainWindow(object):
         self.SerialOutLabel.setText(_translate("MainWindow", "Serial Out:"))
         self.SendButton.setText(_translate("MainWindow", "Send"))
 
+    def ReceivedCOM(self):
+        core_GUI_QUADCOPTER.ReceiveCOM(self)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

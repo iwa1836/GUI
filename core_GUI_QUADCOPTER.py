@@ -28,3 +28,14 @@ def RefreshCOM(self):
     self.COMCombo.clear()
     available_port = [port.device for port in list_ports.comports()]
     self.COMCombo.addItems(available_port)
+
+def SendCOM(self):
+    if self.serial_connection is not None:
+        data_to_send = self.SerialOutTB.toPlainText()
+        self.serial_connection.write(data_to_send.encode())
+
+def ReceiveCOM(self):
+    if self.serial_connection is not None:
+        while self.serial_connection.is_open:
+            received_data = self.serial_connection.read(1024).decode()
+            self.SerialInTB.append(received_data)
