@@ -1,8 +1,12 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import Qt, QTimer
+import threading
 import sys
 import core_GUI_QUADCOPTER
 
 class Ui_MainWindow(object):
+    is_running = False
+    
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
@@ -294,6 +298,10 @@ class Ui_MainWindow(object):
 
         core_GUI_QUADCOPTER.RefreshCOM(self)
 
+        #self.timer = QTimer(self)
+        #self.timer.timeout.connect(self.ReceivedCOM)
+        #self.timer.start(100)
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "GCS Quadcopter"))
@@ -317,10 +325,17 @@ class Ui_MainWindow(object):
     def ReceivedCOM(self):
         core_GUI_QUADCOPTER.ReceiveCOM(self)
 
+def ReceiveCOM_Thread(app):
+    while app.is_running:
+        app.ReceivedCOM()
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
+    app.is_running = True
+    receive_thread = threading.Thread(target=ReceiveCOM_Thread, args=(MainWindow,))
+    receive_thread.start()
     sys.exit(app.exec())

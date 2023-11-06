@@ -1,7 +1,9 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import QTimer
 import sys
 import serial
 from serial.tools import list_ports
+import threading
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -162,7 +164,7 @@ class Ui_MainWindow(object):
         self.frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.frame.setObjectName("frame")
         self.verticalLayoutWidget = QtWidgets.QWidget(parent=self.frame)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 201, 373))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 201, 391))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout_3.setContentsMargins(10, 10, 10, 10)
@@ -243,16 +245,60 @@ class Ui_MainWindow(object):
         self.SendButton.setObjectName("SendButton")
         self.SendButton.setEnabled(False)
         self.verticalLayout_3.addWidget(self.SendButton)
+        self.COMStatus = QtWidgets.QLabel(parent=self.verticalLayoutWidget)
+        self.COMStatus.setText("")
+        self.COMStatus.setObjectName("COMStatus")
+        self.verticalLayout_3.addWidget(self.COMStatus)
         self.frame_3 = QtWidgets.QFrame(parent=self.centralwidget)
         self.frame_3.setGeometry(QtCore.QRect(200, 0, 600, 600))
         self.frame_3.setAutoFillBackground(True)
         self.frame_3.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.frame_3.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.frame_3.setObjectName("frame_3")
+        self.frame_2 = QtWidgets.QFrame(parent=self.frame_3)
+        self.frame_2.setGeometry(QtCore.QRect(30, 30, 540, 540))
+        self.frame_2.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_2.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_2.setObjectName("frame_2")
+        self.PFD_Background = QtWidgets.QLabel(parent=self.frame_2)
+        self.PFD_Background.setGeometry(QtCore.QRect(0, -540, 540, 1620))
+        self.PFD_Background.setText("")
+        self.PFD_Background.setPixmap(QtGui.QPixmap("Images/PFD_Background.png"))
+        self.PFD_Background.setScaledContents(True)
+        self.PFD_Background.setObjectName("PFD_Background")
+        self.frame_4 = QtWidgets.QFrame(parent=self.frame_2)
+        self.frame_4.setGeometry(QtCore.QRect(70, 70, 400, 400))
+        self.frame_4.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_4.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_4.setObjectName("frame_4")
+        self.PFD_Pitch = QtWidgets.QLabel(parent=self.frame_4)
+        self.PFD_Pitch.setGeometry(QtCore.QRect(-70, -610, 540, 1620))
+        self.PFD_Pitch.setText("")
+        self.PFD_Pitch.setPixmap(QtGui.QPixmap("Images/PFD_Pitch.png"))
+        self.PFD_Pitch.setScaledContents(True)
+        self.PFD_Pitch.setObjectName("PFD_Pitch")
+        self.PFD_Roll = QtWidgets.QLabel(parent=self.frame_2)
+        self.PFD_Roll.setGeometry(QtCore.QRect(0, 0, 540, 540))
+        self.PFD_Roll.setText("")
+        self.PFD_Roll.setPixmap(QtGui.QPixmap("Images/PFD_Roll.png"))
+        self.PFD_Roll.setScaledContents(True)
+        self.PFD_Roll.setObjectName("PFD_Roll")
+        self.PFD_RollDial = QtWidgets.QLabel(parent=self.frame_2)
+        self.PFD_RollDial.setGeometry(QtCore.QRect(0, 0, 540, 540))
+        self.PFD_RollDial.setText("")
+        self.PFD_RollDial.setPixmap(QtGui.QPixmap("Images/PFD_Roll Dial.png"))
+        self.PFD_RollDial.setScaledContents(True)
+        self.PFD_RollDial.setObjectName("PFD_RollDial")
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        self.RefreshCOM()
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.ReceiveCOM)
+        self.timer.start(100)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -273,25 +319,25 @@ class Ui_MainWindow(object):
         self.SerialInLabel.setText(_translate("MainWindow", "Serial In:"))
         self.SerialOutLabel.setText(_translate("MainWindow", "Serial Out:"))
         self.SendButton.setText(_translate("MainWindow", "Send"))
-    
+
     def ConnectCOM(self):
         COMPort = self.COMCombo.currentText()
         BaudRate = int(self.BaudCombo.currentText())
 
         try:
             self.serial_connection = serial.Serial(port=COMPort, baudrate=BaudRate)
-            self.SerialInTB.setText(f"Connected to {COMPort} at {BaudRate} bps.")
+            self.COMStatus.setText(f"Connected to {COMPort} at {BaudRate} bps.")
             self.ConnectButton.setEnabled(False)
             self.DisconnectButton.setEnabled(True)
             self.RefreshButton.setEnabled(False)
             self.SendButton.setEnabled(True)
         except serial.SerialException as e:
-            self.SerialInTB.setText(f"Failed to connect to {COMPort}: {e}")
+            self.COMStatus.setText(f"Failed to connect to {COMPort}: {e}")
     
     def DisconnectCOM(self):
         if self.serial_connection is not None:
             self.serial_connection.close()
-            self.SerialInTB.setText(f"Disconnected from COM.")
+            self.COMStatus.setText(f"Disconnected from COM.")
             self.ConnectButton.setEnabled(True)
             self.DisconnectButton.setEnabled(False)
             self.RefreshButton.setEnabled(True)
@@ -302,6 +348,15 @@ class Ui_MainWindow(object):
         available_port = [port.device for port in list_ports.comports()]
         self.COMCombo.addItems(available_port)
 
+    def ReceiveCOM(self):
+        if self.serial_connection is not None:
+            while self.serial_connection.is_open:
+                received_data = self.serial_connection.read(1024).decode()
+                self.SerialInTB.append(received_data)
+
+def ReceiveCOM_Thread(app):
+    while True:
+        app.ReceiveCOM()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
@@ -309,4 +364,6 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
+    recv_thread = threading.Thread(target=ReceiveCOM_Thread, args=MainWindow)
+    recv_thread.start()
     sys.exit(app.exec())
