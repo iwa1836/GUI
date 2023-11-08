@@ -1,9 +1,19 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QThread, pyqtSignal, QObject
 import sys
 import serial
 from serial.tools import list_ports
-import threading
+
+class Worker(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal()
+
+    def run(self, serial_connection):
+        if serial_connection is not None:
+            while serial_connection.is_open:
+                received_data = serial_connection.read(1024).decode()
+                self.progress.emit(received_data)
+            self.finished.emit()
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -296,10 +306,6 @@ class Ui_MainWindow(object):
 
         self.RefreshCOM()
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.ReceiveCOM)
-        self.timer.start(100)
-
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "GCS Quadcopter"))
@@ -331,6 +337,7 @@ class Ui_MainWindow(object):
             self.DisconnectButton.setEnabled(True)
             self.RefreshButton.setEnabled(False)
             self.SendButton.setEnabled(True)
+            self.ReceiveCOM(self.serial_connection)
         except serial.SerialException as e:
             self.COMStatus.setText(f"Failed to connect to {COMPort}: {e}")
     
@@ -348,15 +355,21 @@ class Ui_MainWindow(object):
         available_port = [port.device for port in list_ports.comports()]
         self.COMCombo.addItems(available_port)
 
-    def ReceiveCOM(self):
-        if self.serial_connection is not None:
-            while self.serial_connection.is_open:
-                received_data = self.serial_connection.read(1024).decode()
-                self.SerialInTB.append(received_data)
+    def appendCOM(self, data):
+        self.SerialInTB.append(data)
 
-def ReceiveCOM_Thread(app):
-    while True:
-        app.ReceiveCOM()
+    def ReceiveCOM(self, serial_connection):
+        self.thread = QThread()
+        self.worker = Worker()
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run(serial_connection))
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.worker.finished.connect(self.thread.deleteLater)
+        self.worker.progress.connect(self.appendCOM)
+
+        self.thread.start()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
@@ -364,6 +377,4 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
-    recv_thread = threading.Thread(target=ReceiveCOM_Thread, args=MainWindow)
-    recv_thread.start()
     sys.exit(app.exec())
