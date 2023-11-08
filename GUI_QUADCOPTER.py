@@ -237,9 +237,11 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.SerialOutLabel)
         self.SerialOutTB = QtWidgets.QLineEdit(parent=self.verticalLayoutWidget)
         self.SerialOutTB.setObjectName("SerialOutTB")
+        self.SerialOutTB.returnPressed.connect(self.SendCOM)
         self.verticalLayout_3.addWidget(self.SerialOutTB)
         self.SendButton = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
         self.SendButton.setObjectName("SendButton")
+        self.SendButton.clicked.connect(self.SendCOM)
         self.SendButton.setEnabled(False)
         self.verticalLayout_3.addWidget(self.SendButton)
         self.COMStatus = QtWidgets.QLabel(parent=self.verticalLayoutWidget)
@@ -315,14 +317,13 @@ class Ui_MainWindow(object):
         self.SerialOutLabel.setText(_translate("MainWindow", "Serial Out:"))
         self.SendButton.setText(_translate("MainWindow", "Send"))
 
-    #@QtCore.pyqtSlot()
     def ConnectCOM(self):
         COMPort = self.COMCombo.currentText()
         BaudRate = int(self.BaudCombo.currentText())
 
         self.serial_connection.setPortName(COMPort)
         self.serial_connection.setBaudRate(BaudRate)
-        if self.serial_connection.open:
+        if self.serial_connection.open(QtSerialPort.QSerialPort.OpenModeFlag.ReadWrite):
             self.COMStatus.setText(f"Connected to {COMPort} at {BaudRate} bps.")
             self.ConnectButton.setEnabled(False)
             self.DisconnectButton.setEnabled(True)
@@ -331,9 +332,8 @@ class Ui_MainWindow(object):
         else:
             self.COMStatus.setText(f"Failed to connect to {COMPort}")
     
-    #@QtCore.pyqtSlot()
     def DisconnectCOM(self):
-        if self.serial_connection.isOpen:
+        if self.serial_connection.isOpen():
             self.serial_connection.close()
             self.COMStatus.setText(f"Disconnected from COM.")
             self.ConnectButton.setEnabled(True)
@@ -341,19 +341,24 @@ class Ui_MainWindow(object):
             self.RefreshButton.setEnabled(True)
             self.SendButton.setEnabled(False)
 
-    #@QtCore.pyqtSlot()
     def RefreshCOM(self):
         self.COMCombo.clear()
         available_port = QtSerialPort.QSerialPortInfo.availablePorts()
         for port in available_port:
             self.COMCombo.addItem(port.portName())
 
-    #@QtCore.pyqtSlot()
     def ReceiveCOM(self):
-        data = self.serial_connection.readAll()
-        if data:
-            received_data = data.data().decode()
+        while self.serial_connection.canReadLine():
+            received_data = self.serial_connection.readLine().data().decode()
+            received_data = received_data.rstrip('\r\n')
             self.SerialInTB.append(received_data)
+
+    def SendCOM(self):
+        if self.serial_connection.isOpen():
+            send_data = self.SerialOutTB.text().encode()
+            self.serial_connection.write(send_data)
+            self.SerialOutTB.clear()
+            self.COMStatus.setText(f"Data sent: {send_data.decode()}")
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
