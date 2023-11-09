@@ -1,5 +1,4 @@
 from PyQt6 import QtCore, QtGui, QtWidgets, QtSerialPort
-from PyQt6.QtCore import QThread, pyqtSignal, QObject
 import sys
 
 class Ui_MainWindow(object):
