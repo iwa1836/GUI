@@ -572,6 +572,7 @@ class Ui_MainWindow(object):
             received_data = self.serial_connection.readLine().data().decode()
             received_data = received_data.rstrip('\r\n')
             self.SerialInTB.append(received_data)
+            self.ParsingData(received_data)
 
     def SendCOM(self):
         if self.serial_connection.isOpen():
@@ -579,6 +580,16 @@ class Ui_MainWindow(object):
             self.serial_connection.write(send_data)
             self.SerialOutTB.clear()
             self.COMStatus.setText(f"Data sent: {send_data.decode()}")
+
+    def ParsingData(self, data):
+        splitted_data = data.split(';')
+        self.PitchValLabel.setText(splitted_data[0])
+        self.RollValLabel.setText(splitted_data[1])
+        self.YawValLabel.setText(splitted_data[2])
+        self.Mot1ThrPB.setProperty("value", int(splitted_data[3]))
+        self.Mot2ThrPB.setProperty("value", int(splitted_data[4]))
+        self.Mot3ThrPB.setProperty("value", int(splitted_data[5]))
+        self.Mot4ThrPB.setProperty("value", int(splitted_data[6]))
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
