@@ -586,10 +586,17 @@ class Ui_MainWindow(object):
         self.PitchValLabel.setText(splitted_data[0])
         self.RollValLabel.setText(splitted_data[1])
         self.YawValLabel.setText(splitted_data[2])
-        self.Mot1ThrPB.setProperty("value", int(splitted_data[3]))
-        self.Mot2ThrPB.setProperty("value", int(splitted_data[4]))
-        self.Mot3ThrPB.setProperty("value", int(splitted_data[5]))
-        self.Mot4ThrPB.setProperty("value", int(splitted_data[6]))
+        Mot1Val = int(splitted_data[3])
+        Mot2Val = int(splitted_data[4])
+        Mot3Val = int(splitted_data[5])
+        Mot4Val = int(splitted_data[6])
+        self.Mot1ThrPB.setProperty("value", self.MapValue(Mot1Val, 140, 250, 0, 100))
+        self.Mot2ThrPB.setProperty("value", self.MapValue(Mot2Val, 140, 250, 0, 100))
+        self.Mot3ThrPB.setProperty("value", self.MapValue(Mot3Val, 140, 250, 0, 100))
+        self.Mot4ThrPB.setProperty("value", self.MapValue(Mot4Val, 140, 250, 0, 100))
+
+    def MapValue(self, x, in_min, in_max, out_min, out_max):
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
